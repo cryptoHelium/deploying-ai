@@ -7,7 +7,7 @@ from typing_extensions import TypedDict, Annotated
 import operator
 
 from dotenv import load_dotenv
-from animals_chat.prompts import return_instructions_root
+from animals_chat.prompts import return_instructions
 import json
 import requests
 from utils.logger import get_logger
@@ -16,9 +16,9 @@ import os
 
 _logs = get_logger(__name__)
 
-load_dotenv(".env")
-load_dotenv(".secrets")
-
+load_dotenv("/Users/abhatia/deploying-ai/05_src/.env")
+#load_dotenv(".secrets")
+load_dotenv("/Users/abhatia/deploying-ai/05_src/.secrets")
 
 
 @tool
