@@ -61,8 +61,11 @@ def get_nhl_team_facts(team_name: str = "Toronto Maple Leafs") -> str:
         num   = p.get("sweaterNumber", "?")
         return f"#{num} {first} {last} ({pos})"
 
-   #this will be used by the model and returned back to the user
-   
+   #This will be used by the model and returned back to the user
+   #Build a list strings. We use the function above to build the list of strings. 
+   #We then take the list and format into a structured numbered output
+   #We use join to attach the lines together and use \n for new lines.
+
     facts_list = [
         f"Team: {team_name}  (abbreviation: {abbrev})",
         f"Total forwards: {len(forwards)}",
