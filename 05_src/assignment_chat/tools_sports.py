@@ -19,6 +19,12 @@ import requests
 def get_nhl_team_facts(team_name: str = "Toronto Maple Leafs") -> str:
     """
     Get NHL team info. NHL is the National Hockey League
+    
+    Pre-Condition: Pass the user query
+
+    Post-Condition: Find the team Abbreviation to be used to get more data. Then get the team facts and return it. This is the service - returning
+    information about the team and the roster.
+
     """
     url = "https://api.nhle.com/stats/rest/en/team"
     
@@ -29,7 +35,7 @@ def get_nhl_team_facts(team_name: str = "Toronto Maple Leafs") -> str:
     abbrev = None
  
     query = team_name.lower().strip()
-
+    #We need to find out the team abbreviation.
     for team in teams_data.get("data", []):
         full_name    = team.get("fullName", "").lower()
         common_name  = team.get("commonName", "").lower()
@@ -42,7 +48,7 @@ def get_nhl_team_facts(team_name: str = "Toronto Maple Leafs") -> str:
         return f"Could not find an NHL team matching '{team_name}'. Check the spelling and try again."
 
 
-    #Now that we have the abbr. get the team information
+    #Now that we have the abbreviation. get the team roster information
 
     roster_url = f"https://api-web.nhle.com/v1/roster/{abbrev}/current"
     roster_resp = requests.get(roster_url)
