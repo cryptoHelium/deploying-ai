@@ -6,9 +6,10 @@ The service returns basic information about the NHL team including the roster, t
 some insight to the team. The LLM determines what it adds - but follows the instructions in prompt.py
 
 Service #2 - Simple Semantic Query search, via topic, of BBC News Articles.  You search via a topic, and it will search the dataset 
-to see if articles for that topic exist. Used ChromaDB persistent and API Embeddings. Generates Chroma DB once. This tool is tools_bbcnews.py
-The file is in the repo and is loaded only the first time. bbc_news.csv is broken down into type, categorey, content and embeddings are then stored
-in the chromaDB. We use cosine similarity.
+to see if articles for that topic exist. Used ChromaDB persistent and API Embeddings. Generates Chroma DB once to store the vectors. This tool is tools_bbcnews.py
+The file is in the repo and is loaded only the first time. bbc_news.csv is broken down into type, categorey, content and as mentioned embeddings 
+vectors are stored in the chromaDB. We use cosine similarity. Every search query will be embedded the same way and ask chroma DB to find the
+articles whose vectors are closest to the query vector. We return the top 5 most consistent articles and format them.
 
 Service #3 - Simple Web search used Duck Duck Go. Had to get help with a parser to parse through the data. Did not use the Duck Duck Go Library. This tool is tools_websearch.py. For example if you ask what the capital is of a country it will return data. it is a very simple search. You can 
 make it better if you use the DDG library.

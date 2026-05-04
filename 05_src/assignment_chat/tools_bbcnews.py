@@ -2,8 +2,8 @@
 # User can search for tops and see if there is a BBC news article on it.
 # Used a data set from the internet
 # the file is bbc_news.csv and is included in the repo
-# used the Open API embedding and persistent Chroma as per the instructions
-# we break the embeddings into three forms and use vector and cosine similarity concept
+# used the Open API embedding and stored vectors in persistent Chroma as per the instructions
+# we break the embeddings into three forms and use vector and cosine similarity concept.
 # I did need help with the code. However I am using class concepts.
 
 from langchain.tools import tool
@@ -63,9 +63,9 @@ _collection = None
  
 def _embed(texts: list[str]) -> list[list[float]]:
     """
-    Pre-Condition:  We will send in the text and create embeddings.
+    Pre-Condition:  We will send in the text as a list of strings
     
-    Post-Condition: Embed a list of texts using the OpenAI embeddings endpoint via the gateway.
+    Post-Condition: Embed a list of texts using the OpenAI embeddings endpoint via the gateway. return the vectors.
     I was getting errors from the gateway. Needed help: Automatically batches to stay within API limits. 
     """
     client = _get_client()
@@ -94,8 +94,9 @@ def _embed(texts: list[str]) -> list[list[float]]:
 # detect the column data and CSV loader
  
 def _detect_column(headers: list[str], candidates: list[str]) -> Optional[str]:
-    """Pre-Condition: Pass in the data and then detect"""
-    """Post-Condition: Return the first matching column name from candidates (case-insensitive)."""
+    """Pre-Condition: Pass in list of column names from the csv file.
+                      Candidates is our list of possible names to look for"""
+    """Post-Condition: Return the matching column name from csv that matches candidates (case-insensitive)."""
     headers_lower = [h.lower().strip() for h in headers]
     for candidate in candidates:
         if candidate.lower() in headers_lower:
@@ -105,7 +106,9 @@ def _detect_column(headers: list[str], candidates: list[str]) -> Optional[str]:
  
 def _load_csv(path: str) -> list[dict]:
     """Pre-Condition: Load the file As per class lab, Load CSV and return list of dicts with keys: text, title, category.
-    The CSV file is hard coded in the repo and will always be found. bbc_news.csv downloaded from internet. The exceptions shouldnt happen"""
+    The CSV file is hard coded in the repo and will always be found. bbc_news.csv downloaded from internet. The exceptions shouldnt happen
+    
+    Post-Condition: Return list of dicts with the text title, category. Also trim text to reduce tokens"""
 
     if not Path(path).exists():
         raise FileNotFoundError(
@@ -148,11 +151,13 @@ def _load_csv(path: str) -> list[dict]:
 # ChromaDB collection
  
 def _get_collection():
-    """Pre-Condition: Build Collection. Only do this once. We dont need to do it each time.
+    """Pre-Condition: relies on bbc_news.csv and the openAI gateway.
     Post-Condition: Return the ChromaDB collection from the local CSV."""
     
     global _client, _collection
  
+ # we dont need to keep loading each pass. Only load it once.
+
     if _collection is not None:
         return _collection
  
@@ -177,13 +182,14 @@ def _get_collection():
  
     print(f"[search] Sending {len(texts):,} documents to embedding API…")
     embeddings = _embed(texts)
- 
+    
+    #create the collection
     _collection = _client.create_collection(
         name=COLLECTION_NAME,
         metadata={"hnsw:space": "cosine"},
     )
  
-    # Insert in batches
+    # Insert documents in batches
     BATCH = 500
     for start in range(0, len(texts), BATCH):
         end = start + BATCH
@@ -205,7 +211,7 @@ def _get_collection():
 @tool
 def handle_semantic_search(query: str) -> str:
     """
-    Pre-Condition:
+    Pre-Condition: User will provide query
     Semantic search: embed the query via the OpenAI gateway, then find the
     closest documents in ChromaDB using cosine similarity.
  
@@ -275,9 +281,10 @@ def handle_semantic_search(query: str) -> str:
 
 def initialize_search_service() -> str:
     """
-    Pre-condition: Init the search
+    Pre-condition: Init the search. called from app.py
     
-    Post-condition: Help the query at startup? Called once from app.py in a background thread.
+    Post-condition: Help the query at startup? Called once from app.py in a background thread. _collection is loaded and ready.
+    This allows the UI to load up and have the collection load up in parallel. 
     """
     try:
         _get_collection()

@@ -78,6 +78,8 @@ def chat(message: str, history: list[dict]) -> str:
  
  
 # Gradio UI
+# Give examples for the user so they know what to do and how to execute. 
+# The examples are not cached and will accept other examples.
  
 chat_ui = gr.ChatInterface(
     fn=chat,
@@ -94,7 +96,6 @@ chat_ui = gr.ChatInterface(
     ],
     cache_examples=False,
 )
- 
  
 # start the chat bot
  
