@@ -1,3 +1,7 @@
+#The main app.py that will initiate the chat bot
+#It will call main.py to use LLM to assist with routing and determine which tool/service to use
+#The chat interface is using the gradio framework
+
 from main import get_graph
 from langchain_core.messages import HumanMessage, AIMessage
 import gradio as gr
@@ -16,9 +20,9 @@ load_dotenv("../../05_src/.secrets")
 
 llm = get_graph()
 
-# ── Background search index init ───────────────────────────────────────────────
+# Background search index initialization
  
-_search_status = {"ready": False, "message": "⏳ Loading search index…"}
+_search_status = {"ready": False, "message": "Loading search index…"}
  
  
 def _init_search_background():
@@ -31,18 +35,33 @@ def _init_search_background():
 threading.Thread(target=_init_search_background, daemon=True).start()
  
  
-# ── Chat function ──────────────────────────────────────────────────────────────
+# Chat function. Rely on the LLM to do assist with chat and select the right tool
+# USe gradio Chat as the wrapper. Used the same format from labs/class/example
+
  
 def chat(message: str, history: list[dict]) -> str:
     """
-    Gradio chat callback.
+    Gradio chat.
  
-    Args:
+    Pre-Condition
         message: The latest user message string.
         history: List of {"role": "user"|"assistant", "content": "..."} dicts.
  
-    Returns:
+    Post-Condition:
         The assistant's response as a string.
+
+
+    User message
+     ↓
+    call_model  →  LLM reads tool descriptions → decides which tool fits
+     ↓
+    tools_condition  →  tool call detected?
+     ↓ yes
+    ToolNode  →  runs the function, returns result
+     ↓
+    call_model  →  LLM reads result, writes final answer
+     ↓
+    User sees response
     """
     langchain_messages = []
  
@@ -58,7 +77,7 @@ def chat(message: str, history: list[dict]) -> str:
     return response["messages"][-1].content
  
  
-# ── Gradio UI
+# Gradio UI
  
 chat_ui = gr.ChatInterface(
     fn=chat,
@@ -77,7 +96,7 @@ chat_ui = gr.ChatInterface(
 )
  
  
-# ── Launch ─────────────────────────────────────────────────────────────────────
+# start the chat bot
  
 if __name__ == "__main__":
     print(f"[app] Search index status: {_search_status['message']}")

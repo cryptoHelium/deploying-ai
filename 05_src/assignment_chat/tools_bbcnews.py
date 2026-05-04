@@ -1,39 +1,22 @@
+# Service 2 Search BBC news articles
+# User can search for tops and see if there is a BBC news article on it.
+# Used a data set from the internet
+# the file is bbc_news.csv and is included in the repo
+# used the Open API embedding and persistent Chroma as per the instructions
+# we break the embeddings into three forms and use vector and cosine similarity concept
+# I did need help with the code. However I am using class concepts.
+
 from langchain.tools import tool
-from fastmcp import FastMCP
+
 import chromadb
 from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
-
-
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
-from pydantic import BaseModel, Field
-
-import pandas as pd
 from dotenv import load_dotenv
-#from utils.logger import get_logger
 import os
-import re
 from pathlib import Path
 from typing import Optional
 import csv, time
 from openai import OpenAI
-
-
-#_logs = get_logger(__name__)
-
-load_dotenv()
-#load_dotenv(".secrets")
-
-
-#We will not use docker
-
-#vector_db_client_url="http://localhost:8000"
-#chroma = chromadb.HttpClient(host=vector_db_client_url)
-#collection = chroma.get_collection(name="pitchfork_reviews", 
-#                                   embedding_function=OpenAIEmbeddingFunction(
-#                                       api_key = os.getenv("OPENAI_API_KEY"),
-#                                       model_name="text-embedding-3-small")
-#                                   )
 
 CHROMA_PATH      = "./chroma_db"
 COLLECTION_NAME  = "bbc_news"
@@ -59,26 +42,31 @@ def _build_client() -> OpenAI:
     )
 
 _openai_client: Optional[OpenAI] = None
- 
+
+#basic check. I was having trouble with the client. Needed help here.
+
 def _get_client() -> OpenAI:
     global _openai_client
     if _openai_client is None:
         _openai_client = _build_client()
     return _openai_client
- 
- 
-# ── Globals (lazy-loaded) ──────────────────────────────────────────────────────
+
+#user persistence
  
 _client: Optional[chromadb.PersistentClient] = None
 _collection = None
  
  
 # Embedding via gateway
+# Use Open API embeddings. I guess I could have used a local model too? 
+
  
 def _embed(texts: list[str]) -> list[list[float]]:
     """
-    Embed a list of texts using the OpenAI embeddings endpoint via your gateway.
-    Automatically batches to stay within API limits.
+    Pre-Condition:  We will send in the text and create embeddings.
+    
+    Post-Condition: Embed a list of texts using the OpenAI embeddings endpoint via the gateway.
+    I was getting errors from the gateway. Needed help: Automatically batches to stay within API limits. 
     """
     client = _get_client()
     all_embeddings = []
@@ -103,10 +91,11 @@ def _embed(texts: list[str]) -> list[list[float]]:
     return all_embeddings
  
  
-# CSV loader
+# detect the column data and CSV loader
  
 def _detect_column(headers: list[str], candidates: list[str]) -> Optional[str]:
-    """Return the first matching column name from candidates (case-insensitive)."""
+    """Pre-Condition: Pass in the data and then detect"""
+    """Post-Condition: Return the first matching column name from candidates (case-insensitive)."""
     headers_lower = [h.lower().strip() for h in headers]
     for candidate in candidates:
         if candidate.lower() in headers_lower:
@@ -115,7 +104,9 @@ def _detect_column(headers: list[str], candidates: list[str]) -> Optional[str]:
  
  
 def _load_csv(path: str) -> list[dict]:
-    """As per class lab, Load CSV and return list of dicts with keys: text, title, category."""
+    """Pre-Condition: Load the file As per class lab, Load CSV and return list of dicts with keys: text, title, category.
+    The CSV file is hard coded in the repo and will always be found. bbc_news.csv downloaded from internet. The exceptions shouldnt happen"""
+
     if not Path(path).exists():
         raise FileNotFoundError(
             f"Dataset CSV not found at '{path}'.\n\n"
@@ -157,7 +148,9 @@ def _load_csv(path: str) -> list[dict]:
 # ChromaDB collection
  
 def _get_collection():
-    """Return the ChromaDB collection from the local CSV."""
+    """Pre-Condition: Build Collection. Only do this once. We dont need to do it each time.
+    Post-Condition: Return the ChromaDB collection from the local CSV."""
+    
     global _client, _collection
  
     if _collection is not None:
@@ -208,20 +201,27 @@ def _get_collection():
     return _collection
  
  
-# Use Open API embeddings. I guess I could have used a local model too? 
+
 @tool
-def handle_semantic_search(query: str, top_k: int = 5) -> str:
+def handle_semantic_search(query: str) -> str:
     """
+    Pre-Condition:
     Semantic search: embed the query via the OpenAI gateway, then find the
     closest documents in ChromaDB using cosine similarity.
  
-    Args:
+    Parameters to pass:
         query:  The user's natural language question.
-        top_k:  Number of results to return (default 5).
  
+    Post-Condition:
     Returns:
         Formatted markdown string with the top matching documents.
+        LLM will probably add explanation to what it found
+        limited to 5 results as set by top k in the function
     """
+    # Set the top 5 results to be returned
+    #   
+    top_k = 5
+    
     try:
         collection = _get_collection()
     except FileNotFoundError as e:
@@ -275,8 +275,9 @@ def handle_semantic_search(query: str, top_k: int = 5) -> str:
 
 def initialize_search_service() -> str:
     """
-    Warm up the collection at startup so the first user query is not slow.
-    Called once from app.py in a background thread.
+    Pre-condition: Init the search
+    
+    Post-condition: Help the query at startup? Called once from app.py in a background thread.
     """
     try:
         _get_collection()

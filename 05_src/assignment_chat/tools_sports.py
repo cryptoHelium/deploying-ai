@@ -1,3 +1,15 @@
+# Service 1 API Call
+# This service will retrieve NHL team info using the free NHL API
+# To keep it simple we will only retrieve team information. I could not get other things to work.
+# You specify an NHL team and it will return basic info about the team and the current roster.
+# We have to parse through the response and present it to the model
+
+
+# Note: there are two API calls.
+# Call #1 takes the name of the team and finds the abbreviation. The API isnt based on the full team name
+# Call #2 then it uses the abbreviation to make a call to the api to get the current roster information
+# We split the roster information into forwards, defensement and goalies. It gets returned as a numbered list
+
 from langchain.tools import tool
 import json
 import requests
@@ -29,9 +41,14 @@ def get_nhl_team_facts(team_name: str = "Toronto Maple Leafs") -> str:
     if not abbrev:
         return f"Could not find an NHL team matching '{team_name}'. Check the spelling and try again."
 
+
+    #Now that we have the abbr. get the team information
+
     roster_url = f"https://api-web.nhle.com/v1/roster/{abbrev}/current"
     roster_resp = requests.get(roster_url)
     resp_dict = json.loads(roster_resp.text)
+
+    # we need to split everything to make it clean
 
     forwards  = resp_dict.get("forwards", [])
     defense   = resp_dict.get("defensemen", [])
@@ -44,6 +61,8 @@ def get_nhl_team_facts(team_name: str = "Toronto Maple Leafs") -> str:
         num   = p.get("sweaterNumber", "?")
         return f"#{num} {first} {last} ({pos})"
 
+   #this will be used by the model and returned back to the user
+   
     facts_list = [
         f"Team: {team_name}  (abbreviation: {abbrev})",
         f"Total forwards: {len(forwards)}",
@@ -56,44 +75,3 @@ def get_nhl_team_facts(team_name: str = "Toronto Maple Leafs") -> str:
 
     facts = "\n".join([f"{i+1}. {fact}\n" for i, fact in enumerate(facts_list)])
     return facts
-
-def handle_sports_query(query: str) -> str:
-    """
-    Entry point called by main.py. Extracts the team name from the
-    query and passes it to get_nhl_team_facts().
-    """
-    stop = {
-        "nhl", "hockey", "team", "info", "about", "the", "tell", "me",
-        "how", "is", "doing", "what", "are", "roster", "players", "who",
-        "plays", "for", "give", "show", "list", "facts",
-    }
-    words = [w for w in query.lower().split() if w not in stop]
-    team_name = " ".join(words).strip()
- 
-    if not team_name:
-        return "Please provide an NHL team name, e.g. 'Tell me about the Toronto Maple Leafs'."
- 
-    return get_nhl_team_facts(team_name)
-    
-    
-    
-    #facts_list = resp_dict.get("data", [])
-    
-    #facts = "\n".join([f"{i+1}. {fact}\n" for i, fact in enumerate(facts_list)])
-    
-    #return facts
-
-#@tool
-#def get_dog_facts(n:int=1):
-#    """
-#    Returns n dog facts from the Dog API.
-#    """
-#    url = "http://dogapi.dog/api/v2/facts"
-#    params = {
-#        "limit": n
-#    }
-#    response = requests.get(url, params=params)
-#    resp_dict = json.loads(response.text)
-#    facts_list = resp_dict.get("data", [])
-#    facts = "\n".join([f"{i+1}. {fact['attributes']['body']}\n" for i, fact in enumerate(facts_list)])
-#    return facts
