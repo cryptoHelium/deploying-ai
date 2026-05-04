@@ -51,4 +51,6 @@ dependencies = [
     "torch==2.2.2; platform_system=='Darwin' and platform_machine=='x86_64'",
     "torch==2.8.0; platform_system=='Darwin' and platform_machine=='arm64'",
     "torch==2.8.0; platform_system!='Darwin'",
+    "datasets>=4.8.5",
+    "duckduckgo-search>=8.1.1",
 ]
